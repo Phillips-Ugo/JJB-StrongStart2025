@@ -15,14 +15,15 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
   },
   permissions: [
-    'sidePanel',
-    'contentSettings',
+    'storage',
+    'activeTab'
+  ],
+  host_permissions: [
+    "https://www.amazon.com/*"
   ],
   content_scripts: [{
     js: ['src/content/main.tsx'],
-    matches: ['https://*/*'],
+    matches: ['https://www.amazon.com/*'],
+    run_at: "document_idle"
   }],
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
-  },
 })
