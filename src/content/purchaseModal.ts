@@ -16,7 +16,8 @@ export class PurchaseModal {
     recommendation: { recommendation: string; reasons: string[]; score: number },
     alternatives: ProductRecommendation[],
     onProceed: () => void,
-    onCancel: () => void
+    onCancel: () => void,
+    onAlternativeClick?: (alternativeId: string) => void
   ): void {
     this.remove() // Remove any existing modal
 
@@ -354,7 +355,13 @@ export class PurchaseModal {
         const target = e.currentTarget as HTMLElement
         const altId = target.getAttribute('data-alt-id')
         console.log('User clicked alternative:', altId)
+        
+        if (altId && onAlternativeClick) {
+          onAlternativeClick(altId)
+        }
+        
         // In production: open alternative product page
+        // window.open(`https://amazon.com/dp/${altId}`, '_blank')
       })
     })
 

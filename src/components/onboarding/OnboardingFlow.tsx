@@ -35,10 +35,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   }
 
   const handleSwipeComplete = async (decisions: SwipeDecision[]) => {
-    // Save all swipe decisions
+    // Save all swipe decisions locally
     for (const decision of decisions) {
       await storage.addSwipeDecision(decision)
     }
+    
+    // Bulk sync to Supabase for LLM analysis
+    const { SupabaseSync } = await import('@/services/supabaseSync')
+    await SupabaseSync.syncAllSwipeDecisions(decisions)
+    
     setCurrentStep('complete')
   }
 

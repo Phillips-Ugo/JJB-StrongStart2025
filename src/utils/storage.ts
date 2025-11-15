@@ -1,4 +1,5 @@
 import { UserPreferences, SwipeDecision, Product, PriceSensitivity } from '@/types/onboarding'
+import { SupabaseSync } from '@/services/supabaseSync'
 
 const STORAGE_KEYS = {
   PREFERENCES: 'userPreferences',
@@ -15,6 +16,9 @@ export const storage = {
     await chrome.storage.local.set({
       [STORAGE_KEYS.PREFERENCES]: preferences,
     })
+    
+    // Sync to Supabase
+    await SupabaseSync.syncPreferences(preferences)
   },
 
   async updateGoals(goals: string[], goalWeights: Record<string, number> = {}): Promise<void> {
@@ -78,22 +82,22 @@ export const storage = {
 
     if (swipeDecision === 'like') {
       updated.likedProducts.push(product)
-      // Track liked categories
       if (!updated.likedCategories.includes(product.category)) {
         updated.likedCategories.push(product.category)
       }
     } else {
       updated.dislikedProducts.push(product)
-      // Track disliked categories
       if (!updated.dislikedCategories.includes(product.category)) {
         updated.dislikedCategories.push(product.category)
       }
     }
 
-    // Update category preferences
     this.updateCategoryPreferences(updated, product, swipeDecision)
 
     await this.savePreferences(updated)
+    
+    // Sync individual swipe to Supabase
+    await SupabaseSync.syncSwipeDecision(decision)
   },
 
   updateCategoryPreferences(
@@ -107,10 +111,8 @@ export const storage = {
 
     if (categoryIndex >= 0) {
       const pref = preferences.categoryPreferences[categoryIndex]
-      // Update interest level based on decision
       if (decision === 'like') {
         pref.interest = pref.interest === 'low' ? 'medium' : 'high'
-        // Update average price point
         const count = preferences.likedProducts.filter(
           (p) => p.category === product.category
         ).length
@@ -120,7 +122,6 @@ export const storage = {
         pref.interest = pref.interest === 'high' ? 'medium' : 'low'
       }
     } else {
-      // Add new category preference
       preferences.categoryPreferences.push({
         category: product.category,
         interest: decision === 'like' ? 'high' : 'low',

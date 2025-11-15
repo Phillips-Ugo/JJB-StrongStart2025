@@ -77,9 +77,8 @@ function isProductPage() {
          window.location.pathname.includes('/gp/product/');
 }
 
-function sendProductData(data) {
+function sendProductData(data: any) {
   console.log('Amazon Product Data:', data);
-  
   chrome.runtime.sendMessage({
     type: 'PRODUCT_DATA',
     data: data

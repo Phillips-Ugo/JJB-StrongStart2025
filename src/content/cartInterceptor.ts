@@ -218,8 +218,17 @@ export class CartInterceptor {
         product,
         analysis.shouldBuy,
         analysis.recommendations,
-        () => this.proceedWithPurchase(button),
-        () => this.cancelPurchase()
+        async () => {
+          await this.trackPurchaseDecision(product, analysis.shouldBuy, 'proceeded')
+          this.proceedWithPurchase(button)
+        },
+        async () => {
+          await this.trackPurchaseDecision(product, analysis.shouldBuy, 'cancelled')
+          this.cancelPurchase()
+        },
+        async (alternativeId: string) => {
+          await this.trackPurchaseDecision(product, analysis.shouldBuy, 'viewed_alternative', alternativeId)
+        }
       )
     } catch (error) {
       console.error('Error in purchase analysis:', error)
@@ -252,6 +261,29 @@ export class CartInterceptor {
    */
   private cancelPurchase(): void {
     console.log('Purchase cancelled by user')
+  }
+
+  /**
+   * Track purchase decision in Supabase
+   */
+  private async trackPurchaseDecision(
+    product: Product,
+    recommendation: { recommendation: string; score: number },
+    userDecision: 'proceeded' | 'cancelled' | 'viewed_alternative',
+    alternativeId?: string
+  ): Promise<void> {
+    try {
+      const { SupabaseSync } = await import('@/services/supabaseSync')
+      await SupabaseSync.trackPurchaseAttempt(
+        product,
+        recommendation.recommendation,
+        recommendation.score,
+        userDecision,
+        alternativeId
+      )
+    } catch (error) {
+      console.error('Error tracking purchase decision:', error)
+    }
   }
 }
 
